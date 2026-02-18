@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>weather-dash</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #080e1a;
+      --surface: #0d1526;
+      --border: #1a2d4a;
+      --accent: #4fc3f7;
+      --accent2: #81d4fa;
+      --green: #4dd0a0;
+      --yellow: #ffd54f;
+      --red: #ef5350;
+      --text: #cdd9e8;
+      --dim: #5a7390;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Stars background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.4) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 80px 20px 60px;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,195,247,0.12) 0%, transparent 70%);
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(79,195,247,0.1);
+      border: 1px solid rgba(79,195,247,0.3);
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 9vw, 6.5rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--dim);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 4px 20px rgba(79,195,247,0.35);
+    }
+
+    .btn-primary:hover { box-shadow: 0 6px 28px rgba(79,195,247,0.55); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Terminal Preview */
+    section.terminal-section {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+
+    .terminal {
+      background: #060b14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,195,247,0.08);
+    }
+
+    .terminal-bar {
+      background: var(--surface);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f56; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #27c93f; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--dim);
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+    }
+
+    .t-cmd { color: var(--green); }
+    .t-dim { color: var(--dim); }
+    .t-title { color: #fff; font-weight: bold; }
+    .t-accent { color: var(--accent); }
+    .t-yellow { color: var(--yellow); }
+    .t-red { color: var(--red); }
+    .t-green { color: var(--green); }
+    .t-border { color: #2a4a6e; }
+    .t-icon { font-style: normal; }
+
+    /* Features */
+    .features-section {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(79,195,247,0.4);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon { font-size: 1.8rem; margin-bottom: 12px; }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--dim);
+      line-height: 1.55;
+    }
+
+    /* Install section */
+    .install-section {
+      position: relative;
+      z-index: 1;
+      max-width: 640px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .install-section h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .install-section p {
+      color: var(--dim);
+      margin-bottom: 28px;
+    }
+
+    .code-block {
+      background: #060b14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .code-block code {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+    }
+
+    .code-block code .comment { color: var(--dim); }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid var(--border);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--dim);
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">🌦 Python · Terminal · Open Source</div>
+    <h1>weather-dash</h1>
+    <p class="subtitle">A beautiful terminal weather dashboard. Real-time conditions and 3-day forecasts — no API key needed.</p>
+    <div class="cta-group">
+      <a href="https://github.com/YOUR_USERNAME/weather-dash" class="btn btn-primary">
+        ★ View on GitHub
+      </a>
+      <a href="https://github.com/YOUR_USERNAME/weather-dash/archive/refs/heads/main.zip" class="btn btn-secondary">
+        ↓ Download ZIP
+      </a>
+    </div>
+  </header>
+
+  <section class="terminal-section">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="terminal-title">bash — weather_dash.py</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-cmd">$</span> <span class="t-accent">python weather_dash.py Tokyo</span></div>
+        <br>
+        <div><span class="t-border">──────────────</span> <span class="t-title">🌍  Weather Dashboard</span> <span class="t-border">──────────────</span></div>
+        <br>
+        <div><span class="t-border">╭───────────────────────────────────────────╮</span></div>
+        <div><span class="t-border">│</span> <span class="t-title">Current Weather — Tokyo</span>                   <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>                                           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-icon">⛅</span>  <span class="t-yellow">18°C</span>  <span class="t-dim">feels like 16°C</span>           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>                                           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-dim">📍 Tokyo, Japan</span>                           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-dim">🌤  Partly Cloudy</span>                         <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>                                           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-accent">💧 Humidity:    68%</span>                       <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-accent">💨 Wind:        ↗ 12 km/h (NE)</span>           <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-accent">👁  Visibility:  10 km</span>                    <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-accent">📊 Pressure:    1018 hPa</span>                  <span class="t-border">│</span></div>
+        <div><span class="t-border">│</span>  <span class="t-accent">☀️  UV Index:    3</span>                        <span class="t-border">│</span></div>
+        <div><span class="t-border">╰───────────────────────────────────────────╯</span></div>
+        <br>
+        <div><span class="t-dim">─────────────── 3-Day Forecast ────────────────</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-section">
+    <p class="section-label">// Features</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🌡️</div>
+        <h3>Live Conditions</h3>
+        <p>Temperature, feels-like, humidity, UV index, pressure and visibility at a glance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <h3>3-Day Forecast</h3>
+        <p>High/low temps, sunrise & sunset times, and moon phase for the next three days.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Color-Coded</h3>
+        <p>Temperature dynamically shifts from icy cyan to blazing red based on actual values.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔑</div>
+        <h3>No API Key</h3>
+        <p>Uses the free wttr.in service. Clone and run — zero configuration needed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <h3>Any City</h3>
+        <p>Works for any city worldwide. Just pass the name as a command-line argument.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Super Lightweight</h3>
+        <p>Only two dependencies: <code style="color:var(--accent)">requests</code> and <code style="color:var(--accent)">rich</code>. No heavy frameworks.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="install-section">
+    <h2>Get Started</h2>
+    <p>Three commands and you're live.</p>
+
+    <div class="code-block">
+      <code>
+        <span class="comment"># Clone the repo</span><br>
+        git clone https://github.com/YOUR_USERNAME/weather-dash.git<br>
+        cd weather-dash<br><br>
+        <span class="comment"># Install dependencies</span><br>
+        pip install -r requirements.txt<br><br>
+        <span class="comment"># Run it!</span><br>
+        python weather_dash.py London
+      </code>
+    </div>
+  </section>
+
+  <footer>
+    Built with Python &amp; <a href="https://github.com/Textualize/rich" target="_blank">Rich</a> · 
+    Data from <a href="https://wttr.in" target="_blank">wttr.in</a> · 
+    <a href="https://github.com/YOUR_USERNAME/weather-dash" target="_blank">GitHub</a>
+  </footer>
+
+</body>
+</html>
